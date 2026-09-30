@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.1
+
+- Added the GitHub repository, homepage (docs and demo site) and issue tracker links to the npm page.
+
 ## 1.0.0
 
 The API is now stable. Everything from 0.2 keeps working; the only behavior changes are listed under "Changed".

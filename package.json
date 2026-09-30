@@ -1,6 +1,6 @@
 {
   "name": "pagepal",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A mascot that reacts to what is happening on your page, plus first-party UX analytics: rage and dead clicks, form errors and abandonment, failing requests, offline time.",
   "keywords": [
     "mascot",
@@ -19,6 +19,14 @@
     "vue"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ishan-18/pagepal.git"
+  },
+  "homepage": "https://ishan-18.github.io/pagepal/",
+  "bugs": {
+    "url": "https://github.com/ishan-18/pagepal/issues"
+  },
   "type": "module",
   "sideEffects": [
     "./dist/element.js",
