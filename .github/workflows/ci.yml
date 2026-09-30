@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    name: Typecheck, unit tests, build, size budget
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run size
+
+  e2e:
+    name: Browser behavior (Chromium, Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npx playwright test e2e/behavior.spec.ts e2e/v3.spec.ts
+        env:
+          PW_CHANNEL: chromium
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/
+
+  visual:
+    # The committed baselines were made on Windows with Edge; compare like with like.
+    # Once Linux baselines exist (see update-baselines.yml), this can move to ubuntu.
+    name: Visual regression (Edge, Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx playwright test e2e/gallery.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: visual-diff
+          path: test-results/

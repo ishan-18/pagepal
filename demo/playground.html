@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>pagepal Playground</title>
+  <style>
+    :root { color-scheme: light; --bg: #f7f6fb; --card: #fff; --text: #1d1b26; --muted: #6b6780; --accent: #7c5cff; --border: #e4e1ee; --code: #1d1b26; --code-text: #eeeaf8; }
+    @media (prefers-color-scheme: dark) {
+      :root:where(:not([data-theme="light"])) { color-scheme: dark; --bg: #14121c; --card: #1f1c2b; --text: #eeeaf8; --muted: #a39fb8; --border: #332f45; --code: #0e0c14; }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+    main { max-width: 1040px; margin: 0 auto; padding: 32px 16px 120px; display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 20px; }
+    @media (max-width: 760px) { main { grid-template-columns: minmax(0, 1fr); } }
+    header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: end; gap: 8px; }
+    h1 { margin: 0; font-size: 1.6rem; }
+    .sub { margin: 2px 0 0; color: var(--muted); }
+    a { color: var(--accent); }
+    section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; min-width: 0; }
+    h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+    label { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 5px 0; font-size: .92rem; }
+    select, input[type="text"], input[type="number"] { font: inherit; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); width: 150px; }
+    input[type="color"] { width: 44px; height: 30px; border: 1px solid var(--border); border-radius: 6px; background: none; padding: 2px; }
+    fieldset { border: 0; padding: 0; margin: 0 0 12px; }
+    .stage { min-height: 200px; display: grid; place-items: center; gap: 12px; }
+    .stage p { color: var(--muted); font-size: .9rem; margin: 0; text-align: center; }
+    .row { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; }
+    button { font: inherit; font-size: .88rem; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; }
+    pre { margin: 0; padding: 14px; background: var(--code); color: var(--code-text); border-radius: 10px; overflow-x: auto; font: 13px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+    .tabs button[aria-selected="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .right { display: grid; gap: 20px; align-content: start; min-width: 0; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <h1>Playground</h1>
+        <p class="sub">Change options; the pal in the corner and the code update live.</p>
+      </div>
+      <a href="./">← Back to the demo</a>
+    </header>
+
+    <section>
+      <form id="options" onsubmit="return false">
+        <fieldset>
+          <h2>Look</h2>
+          <label>Character <select name="character"><option>blob</option><option>cat</option><option>ghost</option></select></label>
+          <label>Position <select name="position"><option>bottom-right</option><option>bottom-left</option><option>top-right</option><option>top-left</option></select></label>
+          <label>Size <input type="number" name="size" value="72" min="32" max="200" step="4" /></label>
+          <label>Custom color <input type="checkbox" name="useColor" /></label>
+          <label>Color <input type="color" name="color" value="#7c5cff" /></label>
+        </fieldset>
+        <fieldset>
+          <h2>Watchers</h2>
+          <label>Requests <input type="checkbox" name="requests" checked /></label>
+          <label>Page errors <input type="checkbox" name="errors" /></label>
+          <label>Rage clicks <input type="checkbox" name="frustration" checked /></label>
+          <label>Dead clicks <input type="checkbox" name="deadClicks" checked /></label>
+          <label>Avoid overlaps <input type="checkbox" name="avoid" checked /></label>
+          <label>Password fields <input type="checkbox" name="password" checked /></label>
+          <label>Idle <input type="checkbox" name="idle" checked /></label>
+          <label>Dark mode <input type="checkbox" name="darkMode" checked /></label>
+        </fieldset>
+        <fieldset>
+          <h2>Behavior</h2>
+          <label>Interactive <input type="checkbox" name="interactive" checked /></label>
+          <label>Analytics endpoint <input type="text" name="endpoint" placeholder="/api/ux" /></label>
+          <label>Debug panel <input type="checkbox" name="debug" /></label>
+        </fieldset>
+      </form>
+    </section>
+
+    <div class="right">
+      <section class="stage">
+        <p>Try a reaction on the current pal:</p>
+        <div class="row" id="moods"></div>
+      </section>
+      <section>
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" aria-selected="true" data-tab="js">JavaScript</button>
+          <button type="button" role="tab" aria-selected="false" data-tab="html">HTML (&lt;page-pal&gt;)</button>
+        </div>
+        <pre><code id="code"></code></pre>
+      </section>
+    </div>
+  </main>
+
+  <script src="../dist/pagepal.global.js"></script>
+  <script>
+    const form = document.getElementById('options');
+    const DEFAULTS = { character: 'blob', position: 'bottom-right', size: 72, requests: false, errors: false, frustration: true, deadClicks: true, avoid: true, password: true, idle: true, darkMode: true, interactive: true };
+    let pal = null;
+    let tab = 'js';
+
+    function read() {
+      const f = form.elements;
+      return {
+        character: f.character.value,
+        position: f.position.value,
+        size: Number(f.size.value) || 72,
+        color: f.useColor.checked ? f.color.value : undefined,
+        requests: f.requests.checked,
+        errors: f.errors.checked,
+        frustration: f.frustration.checked,
+        deadClicks: f.deadClicks.checked,
+        avoid: f.avoid.checked,
+        password: f.password.checked,
+        idle: f.idle.checked,
+        darkMode: f.darkMode.checked,
+        interactive: f.interactive.checked,
+        endpoint: f.endpoint.value.trim(),
+        debug: f.debug.checked,
+      };
+    }
+
+    /** Only options that differ from the defaults. */
+    function changed(o) {
+      const out = {};
+      for (const [key, value] of Object.entries(o)) {
+        if (['endpoint', 'debug', 'color'].includes(key)) continue;
+        if (value !== DEFAULTS[key]) out[key] = value;
+      }
+      if (o.color) out.color = o.color;
+      return out;
+    }
+
+    function jsCode(o) {
+      const opts = changed(o);
+      const imports = ["import { createPal } from 'pagepal';"];
+      const lines = Object.entries(opts).map(([k, v]) => `  ${k}: ${JSON.stringify(v).replace(/"/g, "'")},`);
+      if (o.endpoint) {
+        imports.push("import { analytics } from 'pagepal/analytics';");
+        lines.push(`  plugins: [analytics({ endpoint: '${o.endpoint}' })],`);
+      }
+      const call = lines.length ? `createPal({\n${lines.join('\n')}\n});` : 'createPal();';
+      const debug = o.debug ? "\n\n// While developing:\nimport { debugPanel } from 'pagepal/debug';\npal.use(debugPanel());" : '';
+      return `${imports.join('\n')}\n\n${o.debug ? 'const pal = ' : ''}${call}${debug}`;
+    }
+
+    function htmlCode(o) {
+      const attrs = [];
+      for (const [key, value] of Object.entries(changed(o))) {
+        const name = key.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+        attrs.push(value === true ? name : value === false ? `${name}="false"` : `${name}="${value}"`);
+      }
+      if (o.endpoint) attrs.push(`analytics-endpoint="${o.endpoint}"`);
+      return `<script src="https://unpkg.com/pagepal"><\/script>\n<page-pal${attrs.length ? ' ' + attrs.join(' ') : ''}></page-pal>`;
+    }
+
+    function apply() {
+      const o = read();
+      pal?.destroy();
+      const plugins = [];
+      if (o.endpoint) plugins.push(PagePal.analytics({ endpoint: o.endpoint }));
+      if (o.debug) plugins.push(PagePal.debugPanel());
+      pal = PagePal.createPal({ ...changed(o), storageKey: 'pagepal-playground', remember: false, plugins });
+      document.getElementById('code').textContent = tab === 'js' ? jsCode(o) : htmlCode(o);
+    }
+
+    form.addEventListener('input', apply);
+    form.addEventListener('change', apply);
+    document.querySelectorAll('[data-tab]').forEach((button) =>
+      button.addEventListener('click', () => {
+        tab = button.dataset.tab;
+        document.querySelectorAll('[data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b === button)));
+        apply();
+      }),
+    );
+
+    const moods = document.getElementById('moods');
+    for (const mood of ['cheer', 'wince', 'dizzy', 'waiting', 'sad', 'sleepy', 'dozing', 'shy', 'concerned', 'confused', 'wink']) {
+      moods.append(Object.assign(document.createElement('button'), { type: 'button', textContent: mood, onclick: () => pal.react(mood, 2500) }));
+    }
+    moods.append(Object.assign(document.createElement('button'), {
+      type: 'button',
+      textContent: 'progress',
+      onclick: () => {
+        let value = 0;
+        const timer = setInterval(() => {
+          value += 0.1;
+          pal.progress(value >= 1 ? null : value);
+          if (value >= 1) clearInterval(timer);
+        }, 200);
+      },
+    }));
+
+    apply();
+  </script>
+</body>
+</html>

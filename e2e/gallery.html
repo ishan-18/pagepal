@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>pagepal gallery</title>
+  <style>
+    body { margin: 0; padding: 24px; font: 13px system-ui, sans-serif; background: #fff; color: #333; }
+    .row { display: grid; grid-template-columns: 70px repeat(12, 96px); align-items: end; gap: 8px; margin-bottom: 28px; }
+    .cell { display: flex; flex-direction: column; align-items: center; gap: 6px; padding-top: 22px; }
+    .name { font-weight: 600; align-self: center; }
+  </style>
+</head>
+<body>
+  <script src="../dist/pagepal.global.js"></script>
+  <script>
+    // Every mood for every character, animations off so screenshots are stable.
+    const moods = ['neutral', 'dizzy', 'wince', 'cheer', 'waiting', 'sad', 'sleepy', 'dozing', 'shy', 'concerned', 'confused', 'wink'];
+    const still = '* { animation: none !important; transition: none !important; } .fx-zzz > * { opacity: 1 !important; }';
+    for (const character of ['blob', 'cat', 'ghost']) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.dataset.character = character;
+      row.innerHTML = `<div class="name">${character}</div>`;
+      for (const mood of moods) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        row.append(cell);
+        const pal = PagePal.createPal({
+          container: cell, position: 'inline', size: 80, character, interactive: false, remember: false,
+          scroll: false, network: false, darkMode: false, idle: false, password: false,
+          frustration: false, deadClicks: false, avoid: false, copy: false, welcomeBack: false,
+        });
+        pal.react(mood, Infinity);
+        const style = document.createElement('style');
+        style.textContent = still;
+        pal.element.shadowRoot.append(style);
+        cell.append(mood);
+      }
+      document.body.append(row);
+    }
+  </script>
+</body>
+</html>

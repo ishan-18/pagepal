@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>pagepal demo</title>
+  <style>
+    :root { --bg: #f7f6fb; --card: #fff; --text: #1d1b26; --muted: #6b6780; --accent: #7c5cff; --border: #e4e1ee; }
+    html.dark { --bg: #14121c; --card: #1f1c2b; --text: #eeeaf8; --muted: #a39fb8; --border: #332f45; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); transition: background .3s, color .3s; }
+    main { max-width: 720px; margin: 0 auto; padding: 48px 16px 120px; }
+    h1 { font-size: 2.2rem; margin: 0 0 4px; }
+    .lead { color: var(--muted); margin: 0 0 20px; }
+    .mood { display: inline-block; padding: 2px 10px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 600; font-size: .9rem; }
+    section { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+    h2 { font-size: 1.1rem; margin: 0 0 4px; }
+    p.hint { color: var(--muted); margin: 0 0 14px; font-size: .92rem; }
+    label { display: block; font-size: .9rem; margin-bottom: 10px; }
+    input { display: block; width: 100%; margin-top: 4px; padding: 9px 11px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
+    input[aria-invalid="true"] { border-color: #e5484d; }
+    .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); cursor: pointer; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .filler { height: 2400px; display: grid; place-items: center; color: var(--muted); border: 2px dashed var(--border); border-radius: 14px; }
+    code { font-size: .88em; }
+    #log { font: 13px ui-monospace, monospace; color: var(--muted); min-height: 1.5em; }
+    a.button { display: inline-block; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); color: var(--text); text-decoration: none; background: var(--card); }
+    .card { cursor: pointer; padding: 8px 14px; border-radius: 8px; border: 1px dashed var(--border); }
+    #chat { position: fixed; right: 18px; bottom: 18px; width: 60px; height: 60px; border-radius: 50%; background: #0a8f6a; color: #fff; display: none; place-items: center; font-size: 26px; box-shadow: 0 6px 20px rgba(0,0,0,.25); z-index: 10; }
+    #chat.on { display: grid; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>pagepal</h1>
+    <p class="lead">A mascot that reacts to your page. Current mood: <span class="mood" id="mood">neutral</span></p>
+    <p class="row" style="margin: -8px 0 24px"><a class="button" href="dashboard.html">Analytics dashboard →</a><a class="button" href="playground.html">Playground →</a></p>
+
+    <section>
+      <h2>Character</h2>
+      <p class="hint">Poke it, drag it anywhere (it remembers), or hover and press ✕ to dismiss.</p>
+      <div class="row" id="characters"></div>
+      <div class="row" style="margin-top: 10px"><button id="bring-back">Bring it back</button><button id="reset">Reset position</button></div>
+    </section>
+
+    <section>
+      <h2>Sign up (native validation)</h2>
+      <p class="hint">Submit empty: it winces and looks at the bad field. Focus the password: it covers its eyes.</p>
+      <form id="signup">
+        <label>Email <input type="email" name="email" required placeholder="you@example.com" /></label>
+        <label>Password <input type="password" name="password" required minlength="6" /></label>
+        <div class="row"><button class="primary">Sign up</button><button type="button" id="peek">Show password</button></div>
+      </form>
+    </section>
+
+    <section>
+      <h2>JS validation (aria-invalid)</h2>
+      <p class="hint">Like most form libraries: <code>novalidate</code> plus <code>aria-invalid="true"</code> on bad fields.</p>
+      <form id="library-form" novalidate>
+        <label>Username (3+ chars) <input name="username" /></label>
+        <button class="primary">Save</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Requests</h2>
+      <p class="hint">Real 2-second endpoints, via <code>fetch</code> or <code>XMLHttpRequest</code> (what axios uses).</p>
+      <div class="row">
+        <button id="fetch-ok">fetch</button>
+        <button id="xhr-ok">XHR</button>
+        <button id="fetch-fail">fetch (500)</button>
+        <button id="xhr-fail">XHR (500)</button>
+        <button id="upload-big">Upload 5 MB (progress ring)</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Frustration & delight</h2>
+      <p class="hint">Click the broken button once (dead click: confused) or 4+ times quickly (rage click: concerned). The card looks clickable but does nothing. Copy some text. Throw an error.</p>
+      <div class="row">
+        <button id="broken">Pay now (broken)</button>
+        <span id="card" class="card">Pro plan →</span>
+        <button id="throw">Throw an error</button>
+        <span>Copy me: <strong>pagepal</strong></span>
+      </div>
+      <p id="log"></p>
+    </section>
+
+    <section>
+      <h2>Page state</h2>
+      <p class="hint">Real offline works too (DevTools → Network → Offline). Idle timeout is 8s here. Leave the tab for 10s and come back. Add a chat widget and the pal steps aside.</p>
+      <div class="row">
+        <button id="toggle-dark">Toggle dark mode</button>
+        <button id="toggle-offline">Simulate offline</button>
+        <button id="toggle-chat">Toggle chat widget</button>
+        <button id="toggle-debug">Debug panel</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Plugins & manual</h2>
+      <p class="hint"><code>pal.use(plugin)</code>, <code>pal.react(mood)</code>, <code>pal.say(text)</code></p>
+      <div class="row" id="manual"><button id="upload">Fake upload (plugin)</button></div>
+    </section>
+
+    <div class="filler">Scroll fast to make it dizzy ↓</div>
+    <div id="chat" aria-label="Pretend chat widget">💬</div>
+  </main>
+
+  <script src="../dist/pagepal.global.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const character = params.get('character') || 'blob';
+    const log = (text) => (document.getElementById('log').textContent = text);
+
+    // First-party analytics: to the demo server's /collect, and to localStorage so the dashboard also works on static hosting.
+    const ux = PagePal.analytics({
+      endpoint: '/collect',
+      send: (events) => {
+        try {
+          const stored = JSON.parse(localStorage.getItem('pagepal-demo-events') || '[]');
+          localStorage.setItem('pagepal-demo-events', JSON.stringify(stored.concat(events).slice(-2000)));
+        } catch {}
+      },
+      flushInterval: 1000,
+    });
+
+    const pal = PagePal.createPal({
+      character,
+      plugins: [ux],
+      watch: ['form#signup', '#library-form'],
+      requests: true,
+      errors: true,
+      idle: { timeout: 8000 },
+      welcomeBack: { after: 10000 },
+    });
+
+    const moodLabel = document.getElementById('mood');
+    pal.on('change', (mood) => (moodLabel.textContent = mood));
+    pal.on('frustration', (d) => log(`frustration event: ${d.kind} on "${d.target.textContent.trim()}"`));
+    pal.on('dismiss', () => log('dismissed (remembered). Use "Bring it back".'));
+
+    // A plugin: its own signal that shows "waiting" during a fake upload, then cheers.
+    let startUpload;
+    pal.use((api) => {
+      startUpload = () => {
+        api.signal('upload', 'waiting');
+        api.say('Uploading…', 1500);
+        setTimeout(() => {
+          api.clear('upload');
+          api.signal('done', 'cheer', 1500);
+        }, 2000);
+      };
+    });
+    document.getElementById('upload').onclick = () => startUpload();
+
+    const characters = document.getElementById('characters');
+    for (const name of ['blob', 'cat', 'ghost']) {
+      const button = document.createElement('button');
+      button.textContent = name;
+      button.setAttribute('aria-pressed', String(name === character));
+      button.onclick = () => (location.search = `?character=${name}`);
+      characters.appendChild(button);
+    }
+    document.getElementById('bring-back').onclick = () => pal.show();
+    document.getElementById('reset').onclick = () => {
+      localStorage.removeItem('pagepal');
+      location.reload();
+    };
+
+    for (const form of document.forms) form.addEventListener('submit', (e) => e.preventDefault());
+    document.getElementById('peek').onclick = () => {
+      const input = document.querySelector('#signup [name=password]');
+      input.type = input.type === 'password' ? 'text' : 'password';
+      input.focus();
+    };
+    document.getElementById('library-form').addEventListener('submit', (e) => {
+      const input = e.target.elements.username;
+      const bad = input.value.trim().length < 3;
+      input.setAttribute('aria-invalid', String(bad));
+      if (!bad) pal.say(`Saved, ${input.value.trim()}!`);
+    });
+
+    const xhr = (url) => {
+      const request = new XMLHttpRequest();
+      request.open('GET', url);
+      request.send();
+    };
+    document.getElementById('fetch-ok').onclick = () => fetch('/api/data');
+    document.getElementById('xhr-ok').onclick = () => xhr('/api/data');
+    document.getElementById('fetch-fail').onclick = () => fetch('/api/fail');
+    document.getElementById('xhr-fail').onclick = () => xhr('/api/fail');
+
+    document.getElementById('broken').onclick = () => {}; // does nothing, on purpose
+    document.getElementById('upload-big').onclick = () => {
+      const request = new XMLHttpRequest();
+      request.open('POST', '/api/upload');
+      request.send(new Blob([new Uint8Array(5_000_000)]));
+    };
+    document.getElementById('toggle-chat').onclick = () => document.getElementById('chat').classList.toggle('on');
+    let removeDebug = null;
+    document.getElementById('toggle-debug').onclick = () => {
+      if (removeDebug) { removeDebug(); removeDebug = null; }
+      else removeDebug = pal.use(PagePal.debugPanel());
+    };
+    document.getElementById('throw').onclick = () => {
+      throw new Error('Demo error (intentional)');
+    };
+
+    document.getElementById('toggle-dark').onclick = () => document.documentElement.classList.toggle('dark');
+    let offline = false;
+    document.getElementById('toggle-offline').onclick = (e) => {
+      offline = !offline;
+      Object.defineProperty(navigator, 'onLine', { configurable: true, get: () => !offline });
+      window.dispatchEvent(new Event(offline ? 'offline' : 'online'));
+      e.target.textContent = offline ? 'Go back online' : 'Simulate offline';
+    };
+
+    const manual = document.getElementById('manual');
+    for (const mood of ['cheer', 'wince', 'dizzy', 'waiting', 'sad', 'sleepy', 'dozing', 'shy', 'concerned', 'wink']) {
+      const button = document.createElement('button');
+      button.textContent = mood;
+      button.onclick = () => pal.react(mood, 2500);
+      manual.appendChild(button);
+    }
+  </script>
+</body>
+</html>

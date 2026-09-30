@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>pagepal e2e fixture</title>
+  <style>
+    body { margin: 0; font: 15px system-ui, sans-serif; }
+    form, .row { margin: 40px; }
+    .tall { height: 5000px; }
+    #chat { position: fixed; right: 16px; bottom: 16px; width: 64px; height: 64px; border-radius: 50%; background: #0b8; display: none; }
+    body.with-chat #chat { display: block; }
+  </style>
+</head>
+<body>
+  <form id="signup">
+    <input name="email" type="email" required placeholder="email" />
+    <input name="password" type="password" placeholder="password" />
+    <button>Sign up</button>
+  </form>
+  <div class="row">
+    <button id="dead">Broken button</button>
+    <div id="card" style="cursor: pointer; display: inline-block; padding: 8px">Clickable card</div>
+    <button id="works">Works</button>
+    <span id="result"></span>
+  </div>
+  <div id="chat" aria-label="chat widget"></div>
+  <div class="tall"></div>
+
+  <script src="../dist/pagepal.global.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    window.frustrations = [];
+    window.ux = PagePal.analytics({ endpoint: '/collect', flushInterval: 500 });
+    window.pal = PagePal.createPal({
+      idle: false,
+      welcomeBack: false,
+      watch: '#signup',
+      requests: true,
+      plugins: [ux],
+    });
+    pal.on('frustration', (detail) => frustrations.push(detail.kind));
+    document.getElementById('signup').addEventListener('submit', (e) => e.preventDefault());
+    document.getElementById('works').onclick = () => (document.getElementById('result').textContent = 'done');
+    if (params.has('chat')) document.body.classList.add('with-chat');
+  </script>
+</body>
+</html>

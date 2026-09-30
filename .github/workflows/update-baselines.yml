@@ -1,0 +1,27 @@
+name: Update Linux visual baselines
+
+# Run manually after an intentional art change (or once, to create the Linux
+# baselines), download the artifact, and commit the PNGs into
+# e2e/gallery.spec.ts-snapshots/.
+on:
+  workflow_dispatch:
+
+jobs:
+  baselines:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - run: npx playwright test e2e/gallery.spec.ts --update-snapshots
+        env:
+          PW_CHANNEL: chromium
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-baselines
+          path: e2e/gallery.spec.ts-snapshots/*-linux.png
