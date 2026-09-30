@@ -196,6 +196,42 @@ describe('avoiding overlaps', () => {
     restore();
   });
 
+  const withPinned = (boxes: [number, number, number, number][]) => {
+    vi.useFakeTimers();
+    document.body.innerHTML = boxes.map((_, i) => `<div id="p${i}" style="position: fixed"></div>`).join('');
+    const els = boxes.map((box, i) => {
+      const el = document.getElementById(`p${i}`)!;
+      stubRect(el, ...box);
+      return el;
+    });
+    const original = document.elementsFromPoint;
+    document.elementsFromPoint = (x: number, y: number) =>
+      els.filter((el) => {
+        const r = el.getBoundingClientRect();
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+      });
+    const pal = createPal({ ...quiet, avoid: true, size: 72, offset: 20 });
+    return { pal, restore: () => (document.elementsFromPoint = original) };
+  };
+
+  it('ignores tall pinned panels like docs sidebars (floats over them)', () => {
+    const { pal, restore } = withPinned([[900, 64, 124, 704]]); // full-height right sidebar
+    vi.advanceTimersByTime(200);
+    expect(pal.element!.style.translate).toBe('');
+    restore();
+  });
+
+  it('stays home when every alternative is blocked, instead of guessing', () => {
+    const { pal, restore } = withPinned([
+      [900, 680, 124, 88], // chat bubble in its corner
+      [900, 560, 124, 110], // something stacked above it
+      [0, 680, 124, 88], // and the other corner is taken too
+    ]);
+    vi.advanceTimersByTime(200);
+    expect(pal.element!.style.translate).toBe('');
+    restore();
+  });
+
   it('slides to the other side while the focused field is underneath', () => {
     vi.useFakeTimers();
     document.body.innerHTML = '<input id="search">';

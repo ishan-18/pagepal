@@ -26,6 +26,7 @@ The API is now stable. Everything from 0.2 keeps working; the only behavior chan
 - Network failures are confirmed after 100 ms, so requests cut off by leaving the page aren't reported as errors.
 
 ### Fixed
+- Overlap avoidance ignores tall pinned panels (docs sidebars, app shells) and stays put when there is no clear spot, instead of sliding into the page header.
 - Elements positioned by SVG `transform` attributes (the highlight, the sprout's leaf) were slightly out of place; the wink sparkles jumped to the corner while animating.
 
 ## 0.2.0

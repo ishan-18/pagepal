@@ -54,6 +54,13 @@ export function watchAvoid(ctx: WatchContext, { selectors = [], focus = true }: 
     return null;
   };
 
+  /**
+   * Tall pinned elements (sidebars, app shells, full-screen layouts) are page chrome the pal
+   * floats over like any corner widget, not something to dodge. Only short things (chat
+   * bubbles, cookie banners, sticky footers) count as obstacles.
+   */
+  const isLayout = (el: Element) => el.getBoundingClientRect().height > win.innerHeight * 0.5;
+
   /** Union of everything pinned that overlaps `box`. */
   const obstacles = (box: Box): Box | null => {
     const found = new Set<Element>();
@@ -70,7 +77,7 @@ export function watchAvoid(ctx: WatchContext, { selectors = [], focus = true }: 
         for (const el of doc.elementsFromPoint(x, y)) {
           if (el === host || host.contains(el)) continue;
           const container = pinned(el);
-          if (container && !container.contains(host)) found.add(container);
+          if (container && !container.contains(host) && !isLayout(container)) found.add(container);
         }
       }
     }
@@ -111,8 +118,8 @@ export function watchAvoid(ctx: WatchContext, { selectors = [], focus = true }: 
     }
     // ...otherwise try the other side of the screen.
     const mirrored = shift(start, mirrorX(), 0);
-    if (!obstacles(mirrored)) view.setDodge(mirrorX(), 0);
-    else view.setDodge(0, Math.max(dy, -start.top)); // best effort
+    // No clear spot: staying home beats guessing (a partial slide can land on the header).
+    view.setDodge(obstacles(mirrored) ? 0 : mirrorX(), 0);
   };
 
   const schedule = () => {
